@@ -1,0 +1,30 @@
+# === macOS ===
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# === Xcode build outputs ===
+build/
+DerivedData/
+*.xcresult/
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.dSYM~
+
+
+# === SwiftPM ===
+.build/
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# === Xcode user data ===
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+
+# Ignore user-specific settings inside the project/workspace
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/

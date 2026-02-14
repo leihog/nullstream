@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; background: #000; pointer-events: none; }
+        #player { width: 100%; height: 100%; pointer-events: none; }
+        iframe { pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <script>
+        var player;
+        var lastTime = 0;
+        var timeInterval;
+        var pendingPlay = false;
+        
+        function postToSwift(event, value) {
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.youtube) {
+                window.webkit.messageHandlers.youtube.postMessage({ event: event, value: value });
+            }
+        }
+        
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                width: '390',
+                height: '640',
+                playerVars: {
+                    enablejsapi: 1,
+                    playsinline: 1,
+                    controls: 0,
+                    rel: 0,
+                    fs: 0,
+                    iv_load_policy: 3,
+                    disablekb: 1,
+                    origin: window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        function onPlayerReady(event) {
+            postToSwift('ready', null);
+        }
+        
+        function onPlayerStateChange(event) {
+            postToSwift('state', event.data);
+            if (event.data === YT.PlayerState.PLAYING) {
+                startTimePolling();
+                pendingPlay = false;
+            } else {
+                stopTimePolling();
+            }
+            if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED) {
+                var dur = player.getDuration();
+                if (dur && dur > 0) postToSwift('duration', dur);
+            }
+            if (event.data === YT.PlayerState.CUED && pendingPlay) {
+                player.playVideo();
+            }
+        }
+        
+        function startTimePolling() {
+            stopTimePolling();
+            timeInterval = setInterval(function() {
+                try {
+                    var t = player.getCurrentTime();
+                    if (t !== lastTime) {
+                        lastTime = t;
+                        postToSwift('time', t);
+                    }
+                } catch (e) {}
+            }, 500);
+        }
+        
+        function stopTimePolling() {
+            if (timeInterval) {
+                clearInterval(timeInterval);
+                timeInterval = null;
+            }
+        }
+        
+        var appPlayer = {
+            loadVideoById: (videoId) => {
+                console.log('loadVideoById', videoId);
+                if (!player || !player.loadVideoById) return;
+                try {
+                    pendingPlay = true;
+                    player.loadVideoById(videoId);
+                    console.log('loadVideoById done');
+                    lastTime = 0;
+                } catch (e) {
+                    pendingPlay = false;
+                    console.log('loadVideoById error', e.message || 'Failed to load video');
+                    postToSwift('error', e.message || 'Failed to load video');
+                }
+            },
+            seekTo: (seconds) => {
+                if (!player || !player.seekTo) return;
+                stopTimePolling();
+                player.seekTo(seconds, true);
+                startTimePolling();
+            }
+        };
+        
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    </script>
+</body>
+</html>
