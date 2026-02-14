@@ -1,5 +1,13 @@
 import SwiftUI
 
+private struct WindowDragHandle: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { NSView() }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // Allows the user to drag the window by this view
+        nsView.window?.isMovableByWindowBackground = true
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var videoStore = VideoStore()
@@ -11,15 +19,29 @@ struct ContentView: View {
     @State private var isSeeking = false
     @State private var seekValue: Double = 0
     private var isWebviewInteractionBlocked = true
+    private let topBarHeight: CGFloat = 44
     
     var body: some View {
-        HSplitView {
-            if showLeftPane {
-                leftPane
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 320)
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                let safeTop = geo.safeAreaInsets.top
+                let padTop = max(0, topBarHeight - safeTop)
+                
+                HSplitView {
+                    if showLeftPane {
+                        leftPane
+                            .frame(minWidth: 200, idealWidth: 240, maxWidth: 320)
+                    }
+                    
+                    mainContent
+                }
+                .padding(.top, padTop)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            
-            mainContent
+            TopBar()
+                .frame(height: topBarHeight)
+                .frame(maxWidth: .infinity)
+                .ignoresSafeArea(.container, edges: .top)
         }
         .onAppear {
             setupBridge()
@@ -41,6 +63,23 @@ struct ContentView: View {
         }
         .background(Color.nullBackground)
     }
+    
+    private struct TopBar: View {
+        var body: some View {
+            ZStack {
+                Color.nullBackground
+
+                Text("NullStream")
+                    .font(.headline)
+                    .foregroundStyle(Color.primaryText)
+            }
+            .overlay(alignment: .bottom) {
+                Divider()
+            }
+            .background(WindowDragHandle())
+        }
+    }
+    
     
     private var leftPane: some View {
         VStack(alignment: .leading, spacing: 0) {

@@ -1,7 +1,10 @@
-# NullStream (macOS)
+# NullStream
 
 A minimal distraction free macOS YouTube player built with SwiftUI and WKWebView, using the YouTube iframe API.
 I use this to listen to music when I need to focus and can't afford getting distracted. 
+
+
+![NullStream](NullStream.png)
 
 ## Features
 

@@ -11,6 +11,7 @@ struct NullStreamApp: App {
                 .background(Color("NullBackground"))
                 .foregroundStyle(Color("PrimaryTextColor"))
         }
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Playback") {
